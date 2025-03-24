@@ -8,13 +8,32 @@ from Bio.Seq import reverse_complement
 
 
 class VCFConverter:
-    def __init__(self, anno_path: str, reference_genome: str, context_size: int = 1024):
-        self.anno_path = anno_path
-        self.reference_genome_path = reference_genome
-        self.reference_genome = Fasta(reference_genome)
+    def __init__(
+        self,
+        gene_annotation_path: str,
+        reference_genome_path: str,
+        context_size: int = 1024,
+    ):
+        """
+        Convert a VCF file to an annotated dataset
+
+        Parameters:
+        -----------
+        gene_annotation_path : str
+            Path to the annotation file (in GFF/GTF format)
+        reference_genome_path : str, optional
+            Path to the reference genome in FASTA format.
+            If not provided, sequences will be filled with 'N's.
+        context_size : int, default=1024
+            Size of the sequence context to extract around each variant.
+        """
+
+        self.anno_path = gene_annotation_path
+        self.reference_genome_path = reference_genome_path
+        self.reference_genome = Fasta(reference_genome_path)
         self.context_size = context_size
         self.annotator = Annotator(
-            annotation_path=anno_path, sequence_length=context_size
+            annotation_path=self.anno_path, sequence_length=self.context_size
         )
         self.logger = logging.getLogger(__name__)
 
@@ -123,13 +142,9 @@ class VCFConverter:
         -----------
         vcf_path : str
             Path to the VCF file
-        anno_path : str
-            Path to the annotation file (in GFF/GTF format)
-        reference_genome : str, optional
-            Path to the reference genome in FASTA format.
-            If not provided, sequences will be filled with 'N's.
-        context_size : int, default=1024
-            Size of the sequence context to extract around each variant.
+        max_variants : int, default=None
+            To limit the number of variants to process.
+            Default value will process all the variants from vcf
 
         Returns:
         --------

@@ -11,7 +11,7 @@ conda activate biofm-eval-env
 
 # Clone biofm-eval repository
 git clone https://github.com/m42-health/biofm-eval.git
-cd biofm_eval
+cd biofm-eval
 
 # Install biofm-eval package
 pip install -e .
@@ -33,31 +33,36 @@ from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConvert
 
 import torch
 
+MODEL_PATH = "/models_gfm/variant_paper/mistral/no-tweaked-mistral-mistral-265m-vlw-annohg1000-6k-step063489-chngont2"
+TOKENIZER_PATH = "/models_gfm/variant_paper/mistral/no-tweaked-mistral-mistral-265m-vlw-annohg1000-6k-step063489-chngont2"
+
+# Load model and tokenizer
 model = AnnotatedModel.from_pretrained(
-    "/models_gfm/variant_paper/mistral/no-tweaked-mistral-mistral-265m-vlw-annohg1000-6k-step063489-chngont2",
+    MODEL_PATH,
     torch_dtype=torch.bfloat16,
 )
 tokenizer = AnnotationTokenizer.from_pretrained(
-    "/models_gfm/variant_paper/mistral/no-tweaked-mistral-mistral-265m-vlw-annohg1000-6k-step063489-chngont2",
+    TOKENIZER_PATH,
 )
 
 embedder = Embedder(model, tokenizer)
 
+# Load data
 vcf_converter = VCFConverter(
-    anno_path="/data/pretrain/genomics/gencode.v38.annotation.gff3",
-    reference_genome="/data/pretrain/genomics/hg38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
+    gene_annotation_path="/data/pretrain/genomics/gencode.v38.annotation.gff3",
+    reference_genome_path="/data/pretrain/genomics/hg38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
 )
 
-annotated_dataset = vcf_converter.vcf_to_annotated_dataset(vcf_path = '/data/pretrain/genomics/genome1000_corrected/HG01779_b.vcf.gz', max_variants=200)
+# Create a huggingface dataset of variants using BioTokens
+annotated_dataset = vcf_converter.vcf_to_annotated_dataset(
+    vcf_path = '/data/pretrain/genomics/genome1000_corrected/HG01779_b.vcf.gz', 
+    max_variants=200 # Set to None to create annotated dataset comprising all the variants from vcf
+)
 
+# Extract BioFM embeddings for all variants
 embeddings = embedder.get_dataset_embeddings(annotated_dataset)
 print(embeddings)
 
-
-# vcf_converter = VCFConverter(
-#     anno_path="/data/pretrain/genomics/gencode.v38.annotation.gff3",
-#     reference_genome="/data/pretrain/genomics/gencode.v38.genome.fa"
-# )
 
 
 # import vcf
@@ -68,9 +73,6 @@ print(embeddings)
 #     print(record)
 #     if True:
 #         break
-
-
-
 
 
 ```
