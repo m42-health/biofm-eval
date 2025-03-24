@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "biofm_eval"
+version = "0.1.0"
+description = "A package for annotated tokenization and modeling of biological DNA sequences"
+readme = "README.md"
+authors = [
+    {name = "M42", email = "genomicllm@m42.ae"}
+]
+license = {text = "CC-BY-NC"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: TODO",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.11"
+dependencies = [
+        "torch>=2.5.1",
+        "transformers>=4.46.1",
+        "numpy>=1.26.0",
+        "biopython>=1.78",
+        "datasets>=2.18.0",
+        "pandas>=2.1.0",
+        "pyfaidx>=0.8.1.1",
+        "scikit-learn>=1.6.1",
+        "PyVCF>=0.6.8",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0.0",
+    "black",
+    "flake8",
+    "mypy",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/m42/biofm-eval"
+"Bug Tracker" = "https://github.com/m42/biofm-eval/issues"
+
+[tool.setuptools]
+package-dir = {"" = "biofm_eval"}
