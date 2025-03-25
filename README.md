@@ -2,6 +2,20 @@
 
 BioFM-Eval is a Python package for inference and embedding extraction from genomic sequences. It features biologically informed tokenization (BioToken) and annotation-based sequence processing for downstream analysis.
 
+![BioFM](BioFM.png)
+
+## Contents
+
+- [Installation](#installation)
+- [Features](#features)
+- [Quick Start](#quick-start)
+    - [Creating Variant Embeddings with BioFM](#creating-variant-embeddings-with-biofm)
+    - [Sequence Embeddings with BioFM](#sequence-embeddings-with-biofm)
+    - [Generation with BioFM](#generation-with-biofm)
+- [License](#license)
+- [Contribution](#contribution)
+- [Citation](#citation)
+
 ## Installation
 
 ```bash
@@ -26,7 +40,16 @@ pip install -e .
 
 ## Quick Start
 
-### Embeddings for VCF Dataset
+### Creating Variant Embeddings with BioFM
+
+This guide will help you quickly generate BioFM embeddings for the variants in your VCF file. These embeddings are created using the method described in our publication. The following steps provide a high-level overview of the embedding extraction process.
+
+- For decoder-only models like BioFM, embeddings are extracted using upstream (before the variant) and downstream (after the variant) sequences to ensure consistency.
+- A mutated upstream sequence and a mutated downstream sequence are constructed, both ending with the variant and having a length of half the evaluation context size.
+- The downstream sequence is reverse complemented before extracting embeddings to align with the reference strand.
+- The upstream and downstream reference sequences are averaged, and the upstream and downstream mutated sequences are averaged.
+- The two averaged vectors (reference and mutated) are concatenated to form the final embedding.
+- This approach ensures equal context availability for all models and accounts for the causal nature of decoder-only architectures.
 
 ```python
 from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConverter
@@ -41,9 +64,7 @@ model = AnnotatedModel.from_pretrained(
     MODEL_PATH,
     torch_dtype=torch.bfloat16,
 )
-tokenizer = AnnotationTokenizer.from_pretrained(
-    TOKENIZER_PATH,
-)
+tokenizer = AnnotationTokenizer.from_pretrained(TOKENIZER_PATH)
 
 # Initialize the embedder using the model and tokenizer
 embedder = Embedder(model, tokenizer)
@@ -71,20 +92,81 @@ print(embeddings)
 # }
 
 ```
-## Embedding Extraction Process
-- For decoder-only models like BioFM, embeddings are extracted using upstream (before the variant) and downstream (after the variant) sequences to ensure consistency.
-- A mutated upstream sequence and a mutated downstream sequence are constructed, both ending with the variant and having a length of half the evaluation context size.
-- The downstream sequence is reverse complemented before extracting embeddings to align with the reference strand.
-- The upstream and downstream reference sequences are averaged, and the upstream and downstream mutated sequences are averaged.
-- The two averaged vectors (reference and mutated) are concatenated to form the final embedding.
-- This approach ensures equal context availability for all models and accounts for the causal nature of decoder-only architectures.
 
+### Sequence Embeddings with BioFM
+Embeddings for input DNA sequences can be generated for downstream tasks.
+
+```python
+from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConverter
+import torch
+
+# Define paths to the pre-trained BioFM model and tokenizer
+MODEL_PATH = "m42-health/BioFM-265M"
+TOKENIZER_PATH = "m42-health/BioFM-265M"
+
+# Load the pre-trained BioFM model and BioToken tokenizer
+model = AnnotatedModel.from_pretrained(
+    MODEL_PATH,
+    torch_dtype=torch.bfloat16,
+)
+tokenizer = AnnotationTokenizer.from_pretrained(TOKENIZER_PATH)
+
+# Initialize the embedder using the model and tokenizer
+embedder = Embedder(model, tokenizer)
+
+
+# Generate sequence embedding
+input_sequences = ['AGCT', 'GACTGCA']
+sequence_embedding = embedder.get_sequence_embeddings(input_sequences)
+print(f'Embedding dimension: {sequence_embedding.shape}')
+
+# Embedding are extracted from the last token for each sequence
+# Example output: torch.tensor of shape (num_sequences, embedding_dim) 
+
+```
+
+
+### Generation with BioFM
+BioFM can generate genomic sequences based on input DNA prompts.
+
+```python
+from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConverter, Generator
+import torch
+
+# Define paths to the pre-trained BioFM model and tokenizer
+MODEL_PATH = "m42-health/BioFM-265M"
+TOKENIZER_PATH = "/models_gfm/variant_paper/mistral/no-tweaked-mistral-mistral-265m-vlw-annohg1000-6k-step063489-chngont2"
+
+# Load the pre-trained BioFM model and BioToken tokenizer
+model = AnnotatedModel.from_pretrained(
+    MODEL_PATH,
+    torch_dtype=torch.bfloat16,
+)
+tokenizer = AnnotationTokenizer.from_pretrained(TOKENIZER_PATH)
+
+# Initializing the generator using model and tokenizer
+seq_generator = Generator(model, tokenizer)
+
+# Generate DNA sequences
+input_sequences = ['AGCT', 'GACTGCA']
+output = seq_generator.generate(
+    input_sequences, 
+    max_new_tokens=10, 
+    temperature=1.0, 
+    do_sample=True, 
+    top_k=4)
+
+print(output)
+
+# Example output: List[str] = ['AGCTACTCCCCTCC', 'GACTGCACCACTGTACT']
+
+```
 
 ## License
 
 This project is licensed under the (TODO) License - see the LICENSE file for details.
 
-## Contributing
+## Contribution
 
 Contributions are welcome! Please feel free to submit a Pull Request. 
 

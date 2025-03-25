@@ -54,6 +54,14 @@ class Embedder:
         self.tokenizer = tokenizer
 
     def get_sequence_embeddings(self, batch: List[str]) -> torch.Tensor:
+        def preprocess_seq(strings: List[str]):
+            return [" ".join(s) for s in strings]
+
+        batch = preprocess_seq(batch)
+
+        return self._get_sequence_embeddings(batch)
+
+    def _get_sequence_embeddings(self, batch: List[str]) -> torch.Tensor:
         tok_seq = self.tokenizer(
             batch, return_tensors="pt", padding=True, truncation=True
         )
@@ -64,6 +72,7 @@ class Embedder:
             for k, v in tok_seq.items()
             if k not in ["token_type_ids", "attention_mask"]
         }
+
         output = self.model(**tok_seq, output_hidden_states=True)
         embeddings = extract_decoder_variant_hidden_states(
             output.hidden_states[-1], tok_seq["input_ids"], self.tokenizer.pad_token_id
@@ -71,10 +80,10 @@ class Embedder:
         return embeddings.detach().float().cpu()
 
     def get_variant_embeddings(self, batch: Dict[str, List[str]]) -> VariantEmbedding:
-        ref_embeddings = self.get_sequence_embeddings(batch["ref_left"])
-        alt_embeddings = self.get_sequence_embeddings(batch["alt_left"])
-        ref_right_embeddings = self.get_sequence_embeddings(batch["ref_right"])
-        alt_right_embeddings = self.get_sequence_embeddings(batch["alt_right"])
+        ref_embeddings = self._get_sequence_embeddings(batch["ref_left"])
+        alt_embeddings = self._get_sequence_embeddings(batch["alt_left"])
+        ref_right_embeddings = self._get_sequence_embeddings(batch["ref_right"])
+        alt_right_embeddings = self._get_sequence_embeddings(batch["alt_right"])
         return VariantEmbedding(
             ref_embeddings, alt_embeddings, ref_right_embeddings, alt_right_embeddings
         )

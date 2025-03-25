@@ -1,15 +1,18 @@
 import json
 import os
-from transformers import PreTrainedTokenizer, AddedToken
+from transformers import PreTrainedTokenizer, AddedToken, AutoTokenizer
 from typing import Dict, List, Optional, Sequence, Union
 from pathlib import Path
 
 
 ANNOTATION_TOKENS = [
-    "[START_CDS]", "[END_CDS]",
-    "[START_TRANSCRIPT]", "[END_TRANSCRIPT]",
-    "[START_EXON]", "[END_EXON]",
-    "[START_CODON]"
+    "[START_CDS]",
+    "[END_CDS]",
+    "[START_TRANSCRIPT]",
+    "[END_TRANSCRIPT]",
+    "[START_EXON]",
+    "[END_EXON]",
+    "[START_CODON]",
 ]
 
 
@@ -20,7 +23,7 @@ class AnnotationTokenizer(PreTrainedTokenizer):
         variant_characters: Sequence[str],
         model_max_length: int,
         padding_side: str = "left",
-        **kwargs
+        **kwargs,
     ):
         """Annotation + Variant tokenizer for Hugging Face transformers."""
         self._vocab_str_to_int = {
@@ -50,7 +53,6 @@ class AnnotationTokenizer(PreTrainedTokenizer):
         pad_token = AddedToken("[PAD]", lstrip=False, rstrip=False)
         unk_token = AddedToken("[UNK]", lstrip=False, rstrip=False)
 
-
         super().__init__(
             bos_token=bos_token,
             eos_token=eos_token,
@@ -62,7 +64,7 @@ class AnnotationTokenizer(PreTrainedTokenizer):
             model_max_length=model_max_length,
             padding_side=padding_side,
             **kwargs,
-        ) 
+        )
 
     @property
     def vocab_size(self) -> int:
@@ -136,7 +138,6 @@ class AnnotationTokenizer(PreTrainedTokenizer):
 
         return tokens_added
 
-
     def get_config(self) -> Dict:
         return {
             "char_ords": [ord(ch) for ch in self.characters],
@@ -157,9 +158,58 @@ class AnnotationTokenizer(PreTrainedTokenizer):
         with open(cfg_file, "w") as f:
             json.dump(cfg, f, indent=4)
 
+    # @classmethod
+    # def from_pretrained(cls, save_directory: Union[str, os.PathLike], **kwargs):
+    #     cfg_file = Path(save_directory) / "tokenizer_config.json"
+    #     with open(cfg_file) as f:
+    #         cfg = json.load(f)
+    #     return cls.from_config(cfg)
+
     @classmethod
-    def from_pretrained(cls, save_directory: Union[str, os.PathLike], **kwargs):
-        cfg_file = Path(save_directory) / "tokenizer_config.json"
-        with open(cfg_file) as f:
-            cfg = json.load(f)
-        return cls.from_config(cfg)
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
+    ):
+        """
+        Load a tokenizer from either a local directory or a Hugging Face model name.
+
+        Args:
+            pretrained_model_name_or_path (str or PathLike): Either a local path to a saved tokenizer
+                or a Hugging Face model name (e.g., 'bert-base-uncased')
+            **kwargs: Additional arguments to pass to the tokenizer initialization
+
+        Returns:
+            AnnotationTokenizer: Initialized tokenizer
+        """
+        # Check if the input is a local directory with a tokenizer_config.json
+        if os.path.isdir(pretrained_model_name_or_path):
+            cfg_file = Path(pretrained_model_name_or_path) / "tokenizer_config.json"
+            if cfg_file.exists():
+                with open(cfg_file) as f:
+                    cfg = json.load(f)
+                return cls.from_config(cfg)
+
+        # If not a local directory, try loading from Hugging Face
+        try:
+            # Use AutoTokenizer to load from Hugging Face model name
+            hf_tokenizer = AutoTokenizer.from_pretrained(
+                pretrained_model_name_or_path, **kwargs
+            )
+
+            # Convert Hugging Face tokenizer to your custom tokenizer configuration
+            cfg = {
+                "char_ords": [ord(c) for c in hf_tokenizer.vocab.keys() if len(c) == 1],
+                "model_max_length": hf_tokenizer.model_max_length,
+            }
+
+            # Convert using your existing from_config method
+            custom_tokenizer = cls.from_config(cfg)
+
+            # Optionally store the original HF tokenizer for reference
+            custom_tokenizer._hf_tokenizer = hf_tokenizer
+
+            return custom_tokenizer
+
+        except Exception as e:
+            raise ValueError(
+                f"Could not load tokenizer from {pretrained_model_name_or_path}: {str(e)}"
+            )
