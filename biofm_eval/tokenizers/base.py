@@ -1,6 +1,6 @@
 import json
 import os
-from transformers import PreTrainedTokenizer, AddedToken, AutoTokenizer
+from transformers import PreTrainedTokenizer, AddedToken, AutoConfig
 from typing import Dict, List, Optional, Sequence, Union
 from pathlib import Path
 
@@ -158,13 +158,6 @@ class AnnotationTokenizer(PreTrainedTokenizer):
         with open(cfg_file, "w") as f:
             json.dump(cfg, f, indent=4)
 
-    # @classmethod
-    # def from_pretrained(cls, save_directory: Union[str, os.PathLike], **kwargs):
-    #     cfg_file = Path(save_directory) / "tokenizer_config.json"
-    #     with open(cfg_file) as f:
-    #         cfg = json.load(f)
-    #     return cls.from_config(cfg)
-
     @classmethod
     def from_pretrained(
         cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
@@ -174,7 +167,7 @@ class AnnotationTokenizer(PreTrainedTokenizer):
 
         Args:
             pretrained_model_name_or_path (str or PathLike): Either a local path to a saved tokenizer
-                or a Hugging Face model name (e.g., 'bert-base-uncased')
+                or a Hugging Face model name (e.g., 'm42-health/BioFM-265M')
             **kwargs: Additional arguments to pass to the tokenizer initialization
 
         Returns:
@@ -190,22 +183,17 @@ class AnnotationTokenizer(PreTrainedTokenizer):
 
         # If not a local directory, try loading from Hugging Face
         try:
-            # Use AutoTokenizer to load from Hugging Face model name
-            hf_tokenizer = AutoTokenizer.from_pretrained(
-                pretrained_model_name_or_path, **kwargs
-            )
+            # Use AutoConfig to load from Hugging Face model tokenizer name
+            hf_config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
 
             # Convert Hugging Face tokenizer to your custom tokenizer configuration
-            cfg = {
-                "char_ords": [ord(c) for c in hf_tokenizer.vocab.keys() if len(c) == 1],
-                "model_max_length": hf_tokenizer.model_max_length,
-            }
+            cfg = hf_config.tokenizer_config
 
             # Convert using your existing from_config method
             custom_tokenizer = cls.from_config(cfg)
 
             # Optionally store the original HF tokenizer for reference
-            custom_tokenizer._hf_tokenizer = hf_tokenizer
+            custom_tokenizer._hf_tokenizer = hf_config.tokenizer_config
 
             return custom_tokenizer
 

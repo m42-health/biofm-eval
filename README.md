@@ -56,8 +56,8 @@ from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConvert
 import torch
 
 # Define paths to the pre-trained BioFM model and tokenizer
-MODEL_PATH = "/models_gfm/variant_paper/mistral/no-tweaked-mistral-mistral-265m-vlw-annohg1000-6k-step063489-chngont2"
-TOKENIZER_PATH = "/models_gfm/variant_paper/mistral/no-tweaked-mistral-mistral-265m-vlw-annohg1000-6k-step063489-chngont2"
+MODEL_PATH = "m42-health/BioFM-265M"
+TOKENIZER_PATH = "m42-health/BioFM-265M"
 
 # Load the pre-trained BioFM model and BioToken tokenizer
 model = AnnotatedModel.from_pretrained(
@@ -87,7 +87,7 @@ print(embeddings)
 
 # Example output (dict):
 # {
-#     'embeddings': array of shape (num_variants, embedding_dim),  # Numeric embeddings for each variant
+#     'embeddings': array of shape (num_variants, 2*embedding_dim),  # Numeric embeddings for each variant
 #     'labels': array of shape (num_variants,)  # Present only during supervised embedding extraction
 # }
 
@@ -135,7 +135,7 @@ import torch
 
 # Define paths to the pre-trained BioFM model and tokenizer
 MODEL_PATH = "m42-health/BioFM-265M"
-TOKENIZER_PATH = "/models_gfm/variant_paper/mistral/no-tweaked-mistral-mistral-265m-vlw-annohg1000-6k-step063489-chngont2"
+TOKENIZER_PATH = "m42-health/BioFM-265M"
 
 # Load the pre-trained BioFM model and BioToken tokenizer
 model = AnnotatedModel.from_pretrained(
@@ -176,3 +176,4 @@ If you find this repository useful, please consider giving a star and citation:
 title={BioToken and BioFM – Biologically-Informed Tokenization Enables Accurate and Efficient Genomic Foundation Models}
 author={}
 ```
+
