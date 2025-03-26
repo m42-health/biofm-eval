@@ -92,12 +92,15 @@ print(embeddings)
 # }
 
 ```
+- Sample reference genome fasta file: [download link](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.26/)
+- Gene annotation file: [download_link](https://www.gencodegenes.org/human/release_38.html)
+- Sample vcf file from 1000 Genomes data: [download_link](https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/)
 
 ### Sequence Embeddings with BioFM
 Embeddings for input DNA sequences can be generated for downstream tasks.
 
 ```python
-from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConverter
+from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder
 import torch
 
 # Define paths to the pre-trained BioFM model and tokenizer
@@ -130,7 +133,7 @@ print(f'Embedding dimension: {sequence_embedding.shape}')
 BioFM can generate genomic sequences based on input DNA prompts.
 
 ```python
-from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConverter, Generator
+from biofm_eval import AnnotatedModel, AnnotationTokenizer, Generator
 import torch
 
 # Define paths to the pre-trained BioFM model and tokenizer
