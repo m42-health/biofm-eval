@@ -9,6 +9,7 @@ BioFM-Eval is a Python package for inference and embedding extraction from genom
 - [Installation](#installation)
 - [Features](#features)
 - [Quick Start](#quick-start)
+    - [BioFM Model on Hugging Face 🤗](#biofm-model-on-hugging-face)
     - [Creating Variant Embeddings with BioFM](#creating-variant-embeddings-with-biofm)
     - [Sequence Embeddings with BioFM](#sequence-embeddings-with-biofm)
     - [Generation with BioFM](#generation-with-biofm)
@@ -39,6 +40,11 @@ pip install -e .
 - `AnnotatedModel`: Supports extracting embeddings from annotated tokens using models like BioFM, allowing downstream applications to effectively utilize biological context.
 
 ## Quick Start
+
+### BioFM Model on Hugging Face 🤗
+The BioFM model is available on [Hugging Face](https://huggingface.co/m42-health/BioFM-265M).
+
+This version has 265 million parameters and can run efficiently without requiring a GPU.
 
 ### Creating Variant Embeddings with BioFM
 
