@@ -2,7 +2,7 @@
 
 BioFM-Eval is a Python package for inference and embedding extraction from genomic sequences. It features biologically informed tokenization (BioToken) and annotation-based sequence processing for downstream analysis.
 
-![BioFM](BioFM.png)
+![BioFM](biotoken_biofm.png)
 
 ## Contents
 
@@ -164,7 +164,7 @@ print(output)
 
 ## License
 
-This project is licensed under the (TODO) License - see the LICENSE file for details.
+This project is licensed under CC BY-NC-4.0 - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Contribution
 
