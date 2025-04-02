@@ -77,13 +77,13 @@ embedder = Embedder(model, tokenizer)
 
 # Set up the VCF converter with paths to gene annotations and reference genome
 vcf_converter = VCFConverter(
-    gene_annotation_path="/data/pretrain/genomics/gencode.v38.annotation.gff3",
-    reference_genome_path="/data/pretrain/genomics/hg38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
+    gene_annotation_path="PATH/TO/gencode.v38.annotation.gff3",
+    reference_genome_path="PATH/TO/hg38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
 )
 
 # Convert a VCF file into an annotated dataset using BioTokens
 annotated_dataset = vcf_converter.vcf_to_annotated_dataset(
-    vcf_path = '/data/pretrain/genomics/genome1000_corrected/HG01779_b.vcf.gz', 
+    vcf_path = 'PATH/TO/genome1000_corrected/HG01779_b.vcf.gz', 
     max_variants=200 # Set to None to process all variants in the VCF file
 )
 
