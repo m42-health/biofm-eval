@@ -96,6 +96,7 @@ print(embeddings)
 #     'embeddings': array of shape (num_variants, 2*embedding_dim),  # Numeric embeddings for each variant
 #     'labels': array of shape (num_variants,)  # Present only during supervised embedding extraction
 # }
+# Note that num_variants may be less than max_variants because of filtering and validity checks.
 
 ```
 - Sample reference genome fasta file: [download link](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.26/)
@@ -182,7 +183,16 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Citation
 If you find this repository useful, please consider giving a star and citation:
 ```
-title={BioToken and BioFM – Biologically-Informed Tokenization Enables Accurate and Efficient Genomic Foundation Models}
-author={}
+@article {Medvedev2025.03.27.645711,
+    author = {Medvedev, Aleksandr and Viswanathan, Karthik and Kanithi, Praveenkumar and Vishniakov, Kirill and Munjal, Prateek and Christophe, Clement and Pimentel, Marco AF and Rajan, Ronnie and Khan, Shadab},
+    title = {BioToken and BioFM - Biologically-Informed Tokenization Enables Accurate and Efficient Genomic Foundation Models},
+    elocation-id = {2025.03.27.645711},
+    year = {2025},
+    doi = {10.1101/2025.03.27.645711},
+    publisher = {Cold Spring Harbor Laboratory},
+    URL = {https://www.biorxiv.org/content/early/2025/04/01/2025.03.27.645711},
+    eprint = {https://www.biorxiv.org/content/early/2025/04/01/2025.03.27.645711.full.pdf},
+    journal = {bioRxiv}
+}
 ```
 
