@@ -6,6 +6,9 @@ BioFM-Eval is a Python package for inference and embedding extraction from genom
 
 ## Contents
 
+- [System Requirements](#system-requirements)
+    - [Hardware Requirements](#hardware-requirements)
+    - [Software Requirements](#software-requirements)
 - [Installation](#installation)
 - [Features](#features)
 - [Quick Start](#quick-start)
@@ -16,6 +19,22 @@ BioFM-Eval is a Python package for inference and embedding extraction from genom
 - [License](#license)
 - [Contribution](#contribution)
 - [Citation](#citation)
+
+## System Requirements
+Before installing `BioFM-Eval`, please ensure your system meets the following requirements.
+
+### Hardware Requirements
+The `BioFM-Eval` package is designed to run on a standard computer with sufficient RAM for BioFM model inference, even without a GPU. The package has been successfully tested on the following hardware configurations:
+
+- MacBook with M2 Pro chip and 16GB unified memory
+- Linux system with Intel Xeon processor, 128GB RAM, and 1x H100 GPU
+
+
+### Software Requirements
+`BioFM-Eval` has been tested on the following operating systems:
+
+- Ubuntu 22.04
+- macOS Sequoia
 
 ## Installation
 
@@ -28,7 +47,8 @@ conda activate biofm-eval-env
 git clone https://github.com/m42-health/biofm-eval.git
 cd biofm-eval
 
-# Install biofm-eval package
+# Install biofm-eval package along with all its dependencies
+# Installation should take under 60 seconds on a Macbook
 pip install -e .
 
 ```
@@ -99,6 +119,8 @@ print(embeddings)
 # Note that num_variants may be less than max_variants because of filtering and validity checks.
 
 ```
+The embedding extraction code snippet above should take less than 30 seconds to process 200 variants.
+
 - Sample reference genome fasta file: [download link](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.26/)
 - Gene annotation file: [download_link](https://www.gencodegenes.org/human/release_38.html)
 - Sample vcf file from 1000 Genomes data: [download_link](https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/)
@@ -134,7 +156,6 @@ print(f'Embedding dimension: {sequence_embedding.shape}')
 # Example output: torch.tensor of shape (num_sequences, embedding_dim) 
 
 ```
-
 
 ### Generation with BioFM
 BioFM can generate genomic sequences based on input DNA prompts.
