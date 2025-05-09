@@ -45,4 +45,4 @@ dev = [
 "Bug Tracker" = "https://github.com/m42/biofm-eval/issues"
 
 [tool.setuptools]
-package-dir = {"" = "biofm_eval"}
+packages = ["biofm_eval"]
