@@ -59,7 +59,7 @@ class VCFConverter:
         )
         variant_idx = len(dna) // 2
         sequence_len = len(dna)
-        assert dna[variant_idx] == variant.REF
+        assert dna[variant_idx] == variant.REF, f'dna[variant_idx]={dna[variant_idx-3:variant_idx+3]}, variant.REF={variant.REF}, variant.ALT={variant.ALT}'
         dna_alt_left = list(dna[1 : variant_idx + 1])
         dna_alt_left[-1] = str(variant.ALT[0])
         dna_alt_left = "".join(dna_alt_left)
@@ -183,14 +183,14 @@ class VCFConverter:
             try:
                 annotated_record = self.annotate_snp_record(variant)
                 if annotated_record is None:
-                    self.logger.warning(f"Failed to annotate variant {variant.ID}")
+                    self.logger.warning(f"Failed to annotate variant {variant}")
                     continue
                 records.append(annotated_record)
             except Exception as e:
                 self.logger.error(f"Failed to annotate variant {variant.ID}: {e}")
                 continue
 
-            if max_variants and (max_variants == variant_count):
+            if max_variants and (max_variants <= variant_count):
                 break
 
         # Log statistics
