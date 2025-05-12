@@ -123,7 +123,7 @@ The embedding extraction code snippet above should take less than 30 seconds to 
 
 - Sample reference genome fasta file: [download link](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.26/)
 - Gene annotation file: [download_link](https://www.gencodegenes.org/human/release_38.html)
-- Sample vcf file from 1000 Genomes data: [download_link](https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/)
+- Sample vcf file from 1000 Genomes data: [download_link](https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000_genomes_project/release/20190312_biallelic_SNV_and_INDEL/)
 
 ### Sequence Embeddings with BioFM
 Embeddings for input DNA sequences can be generated for downstream tasks.
