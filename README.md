@@ -123,7 +123,7 @@ The embedding extraction code snippet above should take less than 30 seconds to 
 
 - Sample reference genome fasta file: [download link](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.26/)
 - Gene annotation file: [download_link](https://www.gencodegenes.org/human/release_38.html)
-- Sample vcf file from 1000 Genomes data: [download_link](https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/)
+- Sample vcf file from 1000 Genomes data: [download_link](https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000_genomes_project/release/20190312_biallelic_SNV_and_INDEL/)
 
 ### Sequence Embeddings with BioFM
 Embeddings for input DNA sequences can be generated for downstream tasks.
@@ -157,8 +157,58 @@ print(f'Embedding dimension: {sequence_embedding.shape}')
 
 ```
 
+### Prediction of Variant Effect from VCF File
+
+```python
+from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConverter
+import torch
+
+# Define paths to the pre-trained BioFM model and tokenizer
+MODEL_PATH = "m42-health/BioFM-265M"
+TOKENIZER_PATH = "m42-health/BioFM-265M"
+DATASET_PATH = "m42-health/variant-benchmark"
+
+# Select one of expression, coding_pathogenicity, non_coding_pathogenicity, common_vs_rare, meqtl, sqtl
+DATASET_SUBSET = "expression"
+# Load the pre-trained BioFM model and BioToken tokenizer
+model = AnnotatedModel.from_pretrained(
+    MODEL_PATH,
+    torch_dtype=torch.bfloat16,
+)
+tokenizer = AnnotationTokenizer.from_pretrained(TOKENIZER_PATH)
+dataset_dict = load_dataset(DATASET_PATH, DATASET_SUBSET)
+
+# Initialize the embedder using the model and tokenizer
+embedder = Embedder(model, tokenizer)
+
+# Set up the VCF converter with paths to gene annotations and reference genome
+vcf_converter = VCFConverter(
+    gene_annotation_path="PATH/TO/gencode.v38.annotation.gff3",
+    reference_genome_path="PATH/TO/hg38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
+)
+
+# Convert a VCF file into an annotated dataset using BioTokens
+annotated_dataset = vcf_converter.vcf_to_annotated_dataset(
+    vcf_path = 'PATH/TO/genome1000_corrected/HG01779_b.vcf.gz', 
+    max_variants=200 # Set to None to process all variants in the VCF file
+)
+
+train_dataset = dataset_dict['train']
+dd = {
+    'train': dataset_dict['train'],
+    'test': annotated_dataset
+}
+result = embedder.linear_probing(
+        dd,
+        batch_size=32
+)
+print(result.y_true.shape, result.y_pred.shape, result.y_pred_proba.shape)
+```
+
+
 ### Generation with BioFM
 BioFM can generate genomic sequences based on input DNA prompts.
+
 
 ```python
 from biofm_eval import AnnotatedModel, AnnotationTokenizer, Generator
@@ -192,6 +242,40 @@ print(output)
 # Example output: List[str] = ['AGCTACTCCCCTCC', 'GACTGCACCACTGTACT']
 
 ```
+
+### Reproduction of the Variant Benchmark from the paper
+
+```python
+from biofm_eval import Annotator, AnnotatedModel, AnnotationTokenizer, Embedder, VCFConverter
+from datasets import DatasetDict
+import torch
+from sklearn.metrics import roc_auc_score
+import numpy as np
+
+# Define paths to the pre-trained BioFM model and tokenizer
+MODEL_PATH = "m42-health/BioFM-265M"
+TOKENIZER_PATH = "m42-health/BioFM-265M"
+DATASET_PATH = "m42-health/variant-benchmark"
+DATASET_SUBSET = "expression"
+# Load the pre-trained BioFM model and BioToken tokenizer
+model = AnnotatedModel.from_pretrained(
+    MODEL_PATH,
+    torch_dtype=torch.bfloat16,
+)
+tokenizer = AnnotationTokenizer.from_pretrained(TOKENIZER_PATH)
+dataset_dict = load_dataset(DATASET_PATH, DATASET_SUBSET)
+embedder = Embedder(model, tokenizer)
+
+for i in range(11):
+    dd = split_dataset_by_chrom(dataset_dict['train'], fold=i)
+
+    result = embedder.linear_probing(
+        dd,
+        batch_size=32
+    )
+    print(f'fold={i}, AUC={roc_auc_score(result.y_true, result.y_pred_proba):.4f}')
+```
+
 
 ## License
 

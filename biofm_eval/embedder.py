@@ -32,6 +32,13 @@ class VariantEmbedding:
     alt_right: torch.Tensor
 
 
+@dataclass
+class LinearProbeResult:
+    y_true: np.ndarray
+    y_pred: np.ndarray
+    y_pred_proba: np.ndarray
+
+
 def aggregate(embeddings: List[VariantEmbedding]) -> VariantEmbedding:
     ref, alt, ref_right, alt_right = map(
         np.concatenate,
@@ -138,7 +145,7 @@ class Embedder:
 
     def linear_probing(
         self, dataset_dict: DatasetDict, batch_size: int = 8
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> LinearProbeResult:
         """
         Train a linear model on the embeddings
         Args:
@@ -148,6 +155,9 @@ class Embedder:
         Returns:
             Tuple of numpy arrays of predicted labels and predicted probabilities for the test set
         """
+        if 'train' not in dataset_dict or 'test' not in dataset_dict:
+            raise ValueError("DatasetDict should have 'train' and 'test' Dataset objects")
+        
         train_data = self.get_dataset_embeddings(dataset_dict["train"], batch_size)
         x, y = train_data["embeddings"], train_data["labels"]
 
@@ -159,4 +169,4 @@ class Embedder:
         y_test_pred = model.predict(x_test)
         y_test_pred_proba = model.predict_proba(x_test)
 
-        return y_test_pred, y_test_pred_proba[:, 1]
+        return LinearProbeResult(y_test, y_test_pred, y_test_pred_proba[:, 1])

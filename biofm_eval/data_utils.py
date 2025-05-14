@@ -1,4 +1,4 @@
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
 import vcf
 import logging
 from typing import List, Dict, Any, Optional, Union
@@ -59,7 +59,7 @@ class VCFConverter:
         )
         variant_idx = len(dna) // 2
         sequence_len = len(dna)
-        assert dna[variant_idx] == variant.REF
+        assert dna[variant_idx] == variant.REF, f'dna[variant_idx]={dna[variant_idx-3:variant_idx+3]}, variant.REF={variant.REF}, variant.ALT={variant.ALT}'
         dna_alt_left = list(dna[1 : variant_idx + 1])
         dna_alt_left[-1] = str(variant.ALT[0])
         dna_alt_left = "".join(dna_alt_left)
@@ -183,14 +183,14 @@ class VCFConverter:
             try:
                 annotated_record = self.annotate_snp_record(variant)
                 if annotated_record is None:
-                    self.logger.warning(f"Failed to annotate variant {variant.ID}")
+                    self.logger.warning(f"Failed to annotate variant {variant}")
                     continue
                 records.append(annotated_record)
             except Exception as e:
                 self.logger.error(f"Failed to annotate variant {variant.ID}: {e}")
                 continue
 
-            if max_variants and (max_variants == variant_count):
+            if max_variants and (max_variants <= variant_count):
                 break
 
         # Log statistics
@@ -203,3 +203,41 @@ class VCFConverter:
         dataset = Dataset.from_list(records)
 
         return dataset
+
+
+FOLD_SPLIT = {
+    0: ['chr1', 'chr2'],
+    1: ['chr3', 'chr4'],
+    2: ['chr5', 'chr6'],
+    3: ['chr7', 'chr8'],
+    4: ['chr9', 'chr10'],
+    5: ['chr11', 'chr12'],
+    6: ['chr13', 'chr14'],
+    7: ['chr15', 'chr16'],
+    8: ['chr17', 'chr18'],
+    9: ['chr19', 'chr20'],
+    10: ['chr21', 'chr22', 'chrX'],
+}
+
+
+def get_fold_split(fold: Optional[int] = None, split_name: str = 'test') -> List[str]:
+    if fold is None:
+        fold = 0
+    if split_name == 'test':
+        return FOLD_SPLIT[fold]
+    else:
+        raise ValueError(f'Unknown split name: {split_name}, should be test')
+    
+
+def split_dataset_by_chrom(dataset: Dataset, fold: Optional[int] = None) -> DatasetDict:
+    """
+    Split a dataset by chromosome
+    """
+
+    train_dataset = dataset.filter(lambda x: x['chrom'] not in get_fold_split(fold, 'test'), keep_in_memory=True)
+    test_dataset = dataset.filter(lambda x: x['chrom'] in get_fold_split(fold, 'test'), keep_in_memory=True)
+
+    return DatasetDict({
+        'train': train_dataset,
+        'test': test_dataset
+    })
