@@ -53,6 +53,22 @@ pip install -e .
 
 ```
 
+### Using UV (an extremely fast Python package installer and resolver)
+
+```bash
+# Install uv
+# On macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# On Windows
+# irm https://astral.sh/uv/install.ps1 | iex
+
+git clone https://github.com/m42-health/biofm-eval.git
+cd biofm-eval
+
+# Install biofm-eval package along with all its dependencies using uv
+uv sync
+```
+
 ## Features
 
 - `Annotator`: Enables annotation of biological sequences with features such as variant information, genomic annotations, and functional elements.
