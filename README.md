@@ -16,7 +16,9 @@ BioFM-Eval is a Python package for inference and embedding extraction from genom
     - [Creating Variant Embeddings for an Entire VCF File with BioFM](#creating-variant-embeddings-for-an-entire-vcf-file-with-biofm)
     - [Creating Variant Embeddings for Individual Variants with BioFM](#creating-variant-embeddings-for-individual-variants-with-biofm)
     - [Sequence Embeddings with BioFM](#sequence-embeddings-with-biofm)
+    - [Prediction of Variant Effect from VCF File](#prediction-of-variant-effect-from-vcf-file)
     - [Generation with BioFM](#generation-with-biofm)
+    - [Reproduction of the Variant Benchmark from the paper](#reproduction-of-the-variant-benchmark-from-the-paper)
 - [License](#license)
 - [Contribution](#contribution)
 - [Citation](#citation)
@@ -149,8 +151,8 @@ embedder = Embedder(model, tokenizer)
 
 # Set up the VCF converter with paths to gene annotations and reference genome
 annotation_helper = VCFConverter(
-    gene_annotation_path="/data/pretrain/genomics/gencode.v38.annotation.gff3",
-    reference_genome_path="/data/pretrain/genomics/hg38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
+    gene_annotation_path="PATH/TO/gencode.v38.annotation.gff3",
+    reference_genome_path="PATH/TO/hg38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
 )
 
 embeddings = embedder.get_individual_variant_embedding(
