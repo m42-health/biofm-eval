@@ -13,7 +13,8 @@ BioFM-Eval is a Python package for inference and embedding extraction from genom
 - [Features](#features)
 - [Quick Start](#quick-start)
     - [BioFM Model on Hugging Face 🤗](#biofm-model-on-hugging-face)
-    - [Creating Variant Embeddings with BioFM](#creating-variant-embeddings-with-biofm)
+    - [Creating Variant Embeddings for an Entire VCF File with BioFM](#creating-variant-embeddings-for-an-entire-vcf-file-with-biofm)
+    - [Creating Variant Embeddings for Individual Variants with BioFM](#creating-variant-embeddings-for-individual-variants-with-biofm)
     - [Sequence Embeddings with BioFM](#sequence-embeddings-with-biofm)
     - [Generation with BioFM](#generation-with-biofm)
 - [License](#license)
@@ -66,7 +67,7 @@ The BioFM model is available on [Hugging Face](https://huggingface.co/m42-health
 
 This version has 265 million parameters and can run efficiently without requiring a GPU.
 
-### Creating Variant Embeddings with BioFM
+### Creating Variant Embeddings for an Entire VCF File with BioFM
 
 This guide will help you quickly generate BioFM embeddings for the variants in your VCF file. These embeddings are created using the method described in our publication. The following steps provide a high-level overview of the embedding extraction process.
 
@@ -121,9 +122,51 @@ print(embeddings)
 ```
 The embedding extraction code snippet above should take less than 30 seconds to process 200 variants.
 
-- Sample reference genome fasta file: [download link](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.26/)
+- Sample reference genome fasta file: [download_link](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.26/)
 - Gene annotation file: [download_link](https://www.gencodegenes.org/human/release_38.html)
 - Sample vcf file from 1000 Genomes data: [download_link](https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000_genomes_project/release/20190312_biallelic_SNV_and_INDEL/)
+
+### Creating Variant Embeddings for Individual Variants with BioFM
+Embeddings for individual input variants can be generated for downstream tasks.
+
+```python
+from biofm_eval import AnnotatedModel, AnnotationTokenizer, Embedder, VCFConverter
+import torch
+
+# Define paths to the pre-trained BioFM model and tokenizer
+MODEL_PATH = "m42-health/BioFM-265M"
+TOKENIZER_PATH = "m42-health/BioFM-265M"
+
+# Load the pre-trained BioFM model and BioToken tokenizer
+model = AnnotatedModel.from_pretrained(
+    MODEL_PATH,
+    torch_dtype=torch.bfloat16,
+)
+tokenizer = AnnotationTokenizer.from_pretrained(TOKENIZER_PATH)
+
+# Initialize the embedder using the model and tokenizer
+embedder = Embedder(model, tokenizer)
+
+# Set up the VCF converter with paths to gene annotations and reference genome
+annotation_helper = VCFConverter(
+    gene_annotation_path="/data/pretrain/genomics/gencode.v38.annotation.gff3",
+    reference_genome_path="/data/pretrain/genomics/hg38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
+)
+
+embeddings = embedder.get_individual_variant_embedding(
+    chromosome="chr22",
+    position=36201698,
+    reference_base="A",
+    alternate_base="G",
+    annotation_helper=annotation_helper
+)
+
+print(embeddings)
+
+# Embeddings are extracted for the given variant using the method described above
+# Example output: array of shape (1, 2*embedding_dim)
+```
+
 
 ### Sequence Embeddings with BioFM
 Embeddings for input DNA sequences can be generated for downstream tasks.

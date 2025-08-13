@@ -95,6 +95,61 @@ class Embedder:
             ref_embeddings, alt_embeddings, ref_right_embeddings, alt_right_embeddings
         )
 
+    def get_individual_variant_embedding(
+        self, chromosome, position, reference_base, alternate_base, annotation_helper
+    ):
+        """
+        Get embedding for a single variant using chromosome, position, and bases.
+
+        Args:
+            chromosome (str): Chromosome identifier (e.g., 'chr22' or '22')
+            position (int): 1-based genomic position
+            reference_base (str): Reference base (e.g., 'A')
+            alternate_base (str): Alternate base (e.g., 'C')
+            annotation_helper (VCFConverter): Instance of VCFConverter to handle annotation
+        Returns:
+            numpy.ndarray: Concatenated embedding array of shape (1, 2*embedding_dim)
+        """
+
+        # Create a mock VCF record-like object for compatibility
+        class MockVariant:
+            def __init__(self, chrom, pos, ref, alt):
+                self.CHROM = chrom
+                self.POS = pos  # 1-based position as in VCF
+                self.REF = ref
+                self.ALT = [alt]  # ALT is typically a list in VCF records
+
+        # Create mock variant
+        mock_variant = MockVariant(chromosome, position, reference_base, alternate_base)
+
+        # Use existing annotate_snp_record function
+        annotation_result = annotation_helper.annotate_snp_record(mock_variant)
+
+        if annotation_result is None:
+            raise ValueError(
+                f"Failed to annotate variant at {chromosome}:{position} {reference_base}>{alternate_base}"
+            )
+
+        # Create batch dictionary with single variant
+        batch = {
+            "ref_left": [annotation_result["ref_left"]],
+            "alt_left": [annotation_result["alt_left"]],
+            "ref_right": [annotation_result["ref_right"]],
+            "alt_right": [annotation_result["alt_right"]],
+        }
+
+        # Get variant embeddings using existing function
+        variant_embedding = self.get_variant_embeddings(batch)
+
+        # Aggregate and concatenate embeddings (following your existing pattern)
+        ref_avg = (variant_embedding.ref + variant_embedding.ref_right) / 2
+        alt_avg = (variant_embedding.alt + variant_embedding.alt_right) / 2
+
+        # Concatenate reference and alternate embeddings
+        final_embedding = np.concatenate([ref_avg, alt_avg], axis=1)
+
+        return final_embedding
+
     def get_dataset_embeddings(
         self, dataset: Dataset, batch_size: int = 8
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -155,9 +210,11 @@ class Embedder:
         Returns:
             Tuple of numpy arrays of predicted labels and predicted probabilities for the test set
         """
-        if 'train' not in dataset_dict or 'test' not in dataset_dict:
-            raise ValueError("DatasetDict should have 'train' and 'test' Dataset objects")
-        
+        if "train" not in dataset_dict or "test" not in dataset_dict:
+            raise ValueError(
+                "DatasetDict should have 'train' and 'test' Dataset objects"
+            )
+
         train_data = self.get_dataset_embeddings(dataset_dict["train"], batch_size)
         x, y = train_data["embeddings"], train_data["labels"]
 
