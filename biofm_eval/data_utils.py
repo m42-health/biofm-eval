@@ -13,6 +13,7 @@ class VCFConverter:
         gene_annotation_path: str,
         reference_genome_path: str,
         context_size: int = 1024,
+        add_chr_prefix: bool = False,
     ):
         """
         Convert a VCF file to an annotated dataset
@@ -26,12 +27,15 @@ class VCFConverter:
             If not provided, sequences will be filled with 'N's.
         context_size : int, default=1024
             Size of the sequence context to extract around each variant.
+        add_chr_prefix : bool, default=False
+            If True, adds 'chr' prefix to chromosome names that don't have it.
         """
 
         self.anno_path = gene_annotation_path
         self.reference_genome_path = reference_genome_path
         self.reference_genome = Fasta(reference_genome_path)
         self.context_size = context_size
+        self.add_chr_prefix = add_chr_prefix
         self.annotator = Annotator(
             annotation_path=self.anno_path, sequence_length=self.context_size
         )
@@ -45,9 +49,9 @@ class VCFConverter:
         flank_size = self.context_size // 2
         start_pos = max(0, variant.POS - 1 - flank_size)
 
-        # Get chromosome, add chr prefix if not present
+        # Get chromosome, optionally add chr prefix
         chrom = variant.CHROM
-        if not chrom.startswith("chr"):
+        if self.add_chr_prefix and not chrom.startswith("chr"):
             chrom = "chr" + chrom
 
         # Extract sequence from reference
@@ -205,7 +209,7 @@ class VCFConverter:
         return dataset
 
 
-FOLD_SPLIT = {
+HUMAN_FOLD_SPLIT = {
     0: ['chr1', 'chr2'],
     1: ['chr3', 'chr4'],
     2: ['chr5', 'chr6'],
@@ -219,25 +223,123 @@ FOLD_SPLIT = {
     10: ['chr21', 'chr22', 'chrX'],
 }
 
+# Backwards compatibility alias
+FOLD_SPLIT = HUMAN_FOLD_SPLIT
 
-def get_fold_split(fold: Optional[int] = None, split_name: str = 'test') -> List[str]:
+def get_fold_split(fold: Optional[int] = None, split_name: str = 'test',
+    fold_split: Optional[Dict[int, List[str]]] = None,
+) -> List[str]:
     if fold is None:
         fold = 0
+    if fold_split is None:
+        fold_split = HUMAN_FOLD_SPLIT
     if split_name == 'test':
-        return FOLD_SPLIT[fold]
+        if fold not in fold_split:
+            raise ValueError(f'Fold {fold} not found in fold_split. Available folds: {list(fold_split.keys())}')
+        return fold_split[fold]
     else:
         raise ValueError(f'Unknown split name: {split_name}, should be test')
-    
 
-def split_dataset_by_chrom(dataset: Dataset, fold: Optional[int] = None) -> DatasetDict:
+
+def split_dataset_by_chrom(dataset: Dataset, fold: Optional[int] = None,
+    fold_split: Optional[Dict[int, List[str]]] = None,
+    chrom_column: str = 'chrom') -> DatasetDict:
     """
     Split a dataset by chromosome
-    """
 
-    train_dataset = dataset.filter(lambda x: x['chrom'] not in get_fold_split(fold, 'test'), keep_in_memory=True)
-    test_dataset = dataset.filter(lambda x: x['chrom'] in get_fold_split(fold, 'test'), keep_in_memory=True)
+    Parameters:
+    -----------
+    dataset : Dataset
+        The dataset to split.
+    fold : int, optional
+        Fold index for the test set (default: 0).
+    fold_split : Dict[int, List[str]], optional
+        Custom fold split configuration mapping fold indices to chromosome lists.
+        If not provided, uses HUMAN_FOLD_SPLIT.
+        Use generate_fold_split() to create a custom configuration for other organisms.
+    chrom_column : str, default='chrom'
+        Name of the column containing chromosome information.
+
+    Returns:
+    --------
+    DatasetDict
+        A DatasetDict with 'train' and 'test' splits.
+
+    Example:
+    --------
+    >>> # For human data (default)
+    >>> splits = split_dataset_by_chrom(dataset, fold=0)
+    >>>
+    >>> # For other organisms
+    >>> chroms = dataset.unique('chromosome')
+    >>> custom_split = generate_fold_split(chroms, n_folds=5)
+    >>> splits = split_dataset_by_chrom(dataset, fold=0, fold_split=custom_split, chrom_column='chromosome')
+    """
+    test_chroms = get_fold_split(fold, 'test', fold_split)
+
+    train_dataset = dataset.filter(
+        lambda x: x[chrom_column] not in test_chroms,
+        keep_in_memory=True
+    )
+    test_dataset = dataset.filter(
+        lambda x: x[chrom_column] in test_chroms,
+        keep_in_memory=True
+)
 
     return DatasetDict({
         'train': train_dataset,
         'test': test_dataset
     })
+
+def generate_fold_split(
+    chromosomes: List[str],
+    n_folds: int = 10,
+    chromosomes_per_fold: Optional[int] = None,
+) -> Dict[int, List[str]]:
+    """
+    Generate a fold split configuration from a list of chromosomes.
+
+    Parameters:
+    -----------
+    chromosomes : List[str]
+        List of chromosome names present in the dataset.
+    n_folds : int, default=10
+        Number of folds to create.
+    chromosomes_per_fold : int, optional
+        Number of chromosomes per fold.
+
+    Returns:
+    --------
+    Dict[int, List[str]]
+        A dictionary mapping fold indices to lists of chromosome names.
+
+    Example:
+    --------
+    >>> chroms = ['I', 'II', 'III', 'IV', 'V', 'X']
+    >>> fold_split = generate_fold_split(chroms, n_folds=3)
+    >>> # Returns: {0: ['I', 'II'], 1: ['III', 'IV'], 2: ['V', 'X']}
+    """
+    unique_chroms = sorted(set(chromosomes))
+    n_chroms = len(unique_chroms)
+
+    if chromosomes_per_fold is not None:
+        fold_split = {}
+        for i in range(n_folds):
+            start_idx = i * chromosomes_per_fold
+            end_idx = min(start_idx + chromosomes_per_fold, n_chroms)
+            if start_idx < n_chroms:
+                fold_split[i] = unique_chroms[start_idx:end_idx]
+        return fold_split
+
+    base_size = n_chroms // n_folds
+    remainder = n_chroms % n_folds
+
+    fold_split = {}
+    idx = 0
+    for fold in range(n_folds):
+        fold_size = base_size + (1 if fold < remainder else 0)
+        if fold_size > 0:
+            fold_split[fold] = unique_chroms[idx:idx + fold_size]
+            idx += fold_size
+
+    return fold_split
