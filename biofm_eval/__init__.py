@@ -8,7 +8,11 @@ from biofm_eval.tokenizers import AnnotationTokenizer
 from biofm_eval.models import AnnotatedModel
 from biofm_eval.embedder import Embedder
 from biofm_eval.generator import Generator
-from biofm_eval.data_utils import VCFConverter, split_dataset_by_chrom
+from biofm_eval.data_utils import (
+    VCFConverter,
+    split_dataset_by_chrom,
+    generate_fold_split,
+)
 # For direct imports
 __all__ = [
     "Annotator",
@@ -18,4 +22,5 @@ __all__ = [
     "Generator",
     "VCFConverter",
     "split_dataset_by_chrom",
+    "generate_fold_split",
 ]
